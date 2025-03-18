@@ -10,8 +10,7 @@
     "test": "mocha test",
     "example:basic": "node examples/basic-usage.js",
     "example:cli": "bash examples/cli-examples.sh",
-    "example:ci": "node examples/ci-integration.js",
-    "update-badge": "node scripts/update-badge.js"
+    "example:ci": "node examples/ci-integration.js"
   },
   "keywords": [
     "git",
