@@ -1,0 +1,30 @@
+{
+  "name": "show-version",
+  "version": "1.0.0",
+  "description": "Gitリポジトリの状態からバージョン情報を出力するユーティリティ",
+  "main": "src/index.js",
+  "bin": {
+    "show-version": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "git",
+    "version",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "yargs": "^17.7.2"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md"
+  ]
+}
