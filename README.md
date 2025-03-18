@@ -2,7 +2,7 @@
 
 <!-- BEGIN VERSION BADGE -->
 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/yousan/show-version/releases/tag/v1.1.0)
-[![Git](https://img.shields.io/badge/git-develop%40eb8a041%20(dirty)-orange.svg)](https://github.com/yousan/show-version/commit/eb8a041)
+[![Git](https://img.shields.io/badge/git-main%40590e375%20(dirty)-orange.svg)](https://github.com/yousan/show-version/commit/590e375)
 <!-- END VERSION BADGE -->
 
 A simple utility to extract version identifiers (tags, branch names, commit hashes, etc.) from Git repositories. **No Git binary dependency** - operates with pure JavaScript implementation.
