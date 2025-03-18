@@ -1,5 +1,11 @@
 # show-version
 
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/yousan/show-version)
+<!-- BEGIN VERSION BADGE -->
+[![Version](https://img.shields.io/badge/version-v0.0.1-main-c980f4c-blue.svg)](https://github.com/yousan/show-version/releases/tag/v0.0.1)
+[![SemVer](https://img.shields.io/badge/SemVer-v0.0.1-brightgreen.svg)](https://semver.org/)
+<!-- END VERSION BADGE -->
+
 A simple utility to extract version identifiers (tags, branch names, commit hashes, etc.) from Git repositories. **No Git binary dependency** - operates with pure JavaScript implementation.
 
 ## Features
