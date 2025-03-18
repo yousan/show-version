@@ -1,9 +1,9 @@
 # show-version
 
-<!-- BEGIN VERSION BADGE -->
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/yousan/show-version/releases/tag/v1.1.0)
-[![Git](https://img.shields.io/badge/git-develop%40eb8a041%20(dirty)-orange.svg)](https://github.com/yousan/show-version/commit/eb8a041)
-<!-- END VERSION BADGE -->
+[![npm version](https://img.shields.io/npm/v/show-version.svg)](https://www.npmjs.com/package/show-version)
+[![GitHub package.json version](https://img.shields.io/github/package-json/v/yousan/show-version)](https://github.com/yousan/show-version)
+[![GitHub last commit](https://img.shields.io/github/last-commit/yousan/show-version)](https://github.com/yousan/show-version/commits)
+[![GitHub license](https://img.shields.io/github/license/yousan/show-version)](https://github.com/yousan/show-version/blob/main/LICENSE)
 
 A simple utility to extract version identifiers (tags, branch names, commit hashes, etc.) from Git repositories. **No Git binary dependency** - operates with pure JavaScript implementation.
 
@@ -172,4 +172,4 @@ We recommend using the async API (`getVersionAsync` and `hasChangesAsync`). The 
 
 ## License
 
-MIT 
+MIT
