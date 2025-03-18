@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-const { getVersion, hasChanges } = require('../src/index');
+const { getVersionAsync, hasChangesAsync } = require('../src/index');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 
+// コマンドライン引数の解析
 const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 [options]')
   .option('format', {
@@ -38,25 +39,45 @@ const argv = yargs(hideBin(process.argv))
     description: '未コミットの変更がある場合に追加する文字列',
     default: '-dirty'
   })
+  .option('dir', {
+    type: 'string',
+    description: 'Gitリポジトリのディレクトリパス',
+    default: '.'
+  })
   .help()
   .alias('help', 'h')
   .version()
   .alias('version', 'v')
   .argv;
 
-const options = {
-  format: argv.format,
-  tag: !argv.noTag,
-  branchName: !argv.noBranch,
-  commitHash: !argv.noHash
-};
-
-let version = getVersion(options);
-
-// 未コミットの変更があり、dirtyオプションが有効な場合
-if (argv.dirty && hasChanges()) {
-  version += argv.dirtySuffix;
+// メイン処理（非同期）
+async function main() {
+  try {
+    const options = {
+      format: argv.format,
+      tag: !argv.noTag,
+      branchName: !argv.noBranch,
+      commitHash: !argv.noHash,
+      dir: argv.dir
+    };
+    
+    // バージョン情報を取得
+    let version = await getVersionAsync(options);
+    
+    // 未コミットの変更があり、dirtyオプションが有効な場合
+    if (argv.dirty && await hasChangesAsync(argv.dir)) {
+      version += argv.dirtySuffix;
+    }
+    
+    // バージョン情報を標準出力に表示
+    console.log(version);
+    
+    process.exit(0);
+  } catch (error) {
+    console.error('エラーが発生しました:', error);
+    process.exit(1);
+  }
 }
 
-// バージョン情報を標準出力に表示
-console.log(version); 
+// 非同期メイン関数を実行
+main(); 
