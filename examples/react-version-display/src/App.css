@@ -32,8 +32,8 @@
   font-size: 1.5em;
 }
 
-/* シンプルなバージョン表示 */
-.version-badge {
+/* Simple version display */
+.app-version {
   display: inline-block;
   padding: 8px 16px;
   background-color: #007bff;
@@ -42,19 +42,19 @@
   font-weight: bold;
 }
 
-/* 日時情報付きバージョン表示 */
-.version-date-info {
+/* Version display with datetime */
+.version-with-date {
   text-align: left;
   padding: 15px;
   background-color: #f8f9fa;
   border-radius: 4px;
 }
 
-.version-date-info div {
+.version-with-date div {
   margin: 5px 0;
 }
 
-/* 詳細なバージョン情報 */
+/* Detailed version information */
 .version-detail {
   text-align: left;
   padding: 15px;
@@ -71,7 +71,7 @@
   text-decoration: underline;
 }
 
-/* セマンティックバージョン表示 */
+/* Semantic version display */
 .semantic-version {
   padding: 20px;
 }
@@ -106,7 +106,7 @@
   color: #333;
 }
 
-/* バージョン履歴 */
+/* Version history */
 .version-history {
   text-align: left;
 }
@@ -137,15 +137,15 @@
   background-color: #f0f0f0;
 }
 
-/* タブナビゲーション */
-.tabs {
+/* Tab navigation */
+.tab-navigation {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   margin-bottom: 20px;
 }
 
-.tabs button {
+.tab-navigation button {
   background-color: #f0f0f0;
   border: none;
   padding: 10px 20px;
@@ -156,17 +156,17 @@
   transition: all 0.3s ease;
 }
 
-.tabs button:hover {
+.tab-navigation button:hover {
   background-color: #e0e0e0;
 }
 
-.tabs button.active {
+.tab-navigation button.active {
   background-color: #61dafb;
   color: #282c34;
 }
 
-/* サンプル表示エリア */
-.version-sample {
+/* Sample display area */
+.sample-area {
   background-color: white;
   border-radius: 8px;
   padding: 20px;
@@ -183,7 +183,7 @@
   justify-content: center;
 }
 
-/* コード例表示 */
+/* Code example display */
 .code-example {
   background-color: #f8f8f8;
   border-radius: 8px;
@@ -211,7 +211,7 @@ pre {
   line-height: 1.4;
 }
 
-/* ビルド情報 */
+/* Build information */
 .build-info {
   background-color: #f0f0f0;
   border-radius: 8px;
@@ -248,8 +248,8 @@ pre {
   font-size: 1rem;
 }
 
-/* フッター */
-footer {
+/* Footer */
+.footer {
   margin-top: 30px;
   padding: 15px;
   color: #666;
