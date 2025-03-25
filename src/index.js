@@ -22,6 +22,7 @@ async function getVersionAsync(options = {}) {
   } = options;
   
   let version = format;
+  let currentBranch = 'unknown';
   
   try {
     // ブランチ名を取得
@@ -32,7 +33,8 @@ async function getVersionAsync(options = {}) {
           dir,
           fullname: false
         });
-        version = version.replace('{branch}', branch || 'unknown');
+        currentBranch = branch || 'unknown';
+        version = version.replace('{branch}', currentBranch);
       } catch (e) {
         version = version.replace('{branch}', 'unknown');
       }
@@ -59,32 +61,29 @@ async function getVersionAsync(options = {}) {
     
     // タグ情報を取得
     if (tag) {
+      let tagVersion = '0.0.0';
+      
       try {
-        const tags = await git.listTags({ fs, dir });
-        
-        // タグがあれば最新のものを取得（セマンティックバージョンでソート）
-        let latestTag = '0.0.0';
-        if (tags.length > 0) {
-          // タグを取得できた場合、セマンティックバージョンとして並べ替え
-          tags.sort((a, b) => {
-            // semverではないタグも扱えるように簡易的な比較を実装
-            const aParts = a.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
-            const bParts = b.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
-            
-            for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-              const aVal = aParts[i] || 0;
-              const bVal = bParts[i] || 0;
-              if (aVal !== bVal) {
-                return aVal - bVal;
-              }
-            }
-            return 0;
-          });
+        // リリースブランチからバージョン情報を取得
+        // 例: release/v1.2.3 → 1.2.3
+        if (currentBranch.startsWith('release/')) {
+          // リリースブランチからバージョン文字列を抽出
+          const releaseVersion = currentBranch.substring('release/'.length)
+                                            .replace(/^v/, ''); // 先頭の 'v' があれば削除
           
-          latestTag = tags[tags.length - 1];
+          if (releaseVersion && /^\d+\.\d+\.\d+/.test(releaseVersion)) {
+            // セマンティックバージョンの形式であれば、そのバージョンを使用
+            tagVersion = releaseVersion;
+          } else {
+            // 形式が異なる場合は通常のタグ取得処理
+            tagVersion = await getLatestTag();
+          }
+        } else {
+          // リリースブランチでない場合は通常のタグ取得処理
+          tagVersion = await getLatestTag();
         }
         
-        version = version.replace('{tag}', latestTag);
+        version = version.replace('{tag}', tagVersion);
       } catch (e) {
         version = version.replace('{tag}', '0.0.0');
       }
@@ -103,32 +102,75 @@ async function getVersionAsync(options = {}) {
 }
 
 /**
+ * 最新のタグを取得する内部関数
+ * @param {string} dir - Gitリポジトリのディレクトリパス
+ * @returns {Promise<string>} 最新のタグ（なければ'0.0.0'）
+ */
+async function getLatestTag(dir = '.') {
+  const tags = await git.listTags({ fs, dir });
+  
+  // タグがあれば最新のものを取得（セマンティックバージョンでソート）
+  let latestTag = '0.0.0';
+  if (tags.length > 0) {
+    // タグを取得できた場合、セマンティックバージョンとして並べ替え
+    tags.sort((a, b) => {
+      // semverではないタグも扱えるように簡易的な比較を実装
+      const aParts = a.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
+      const bParts = b.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
+      
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0;
+        const bVal = bParts[i] || 0;
+        if (aVal !== bVal) {
+          return aVal - bVal;
+        }
+      }
+      return 0;
+    });
+    
+    latestTag = tags[tags.length - 1];
+  }
+  
+  return latestTag;
+}
+
+/**
  * Gitリポジトリからバージョン情報を取得する（同期版）
  * 内部では非同期処理を行いますが、同期的に結果を返すようラップします
  * @param {Object} options - オプション
  * @returns {string} バージョン情報
  */
 function getVersion(options = {}) {
-  // 同期処理で結果を取得するためのワークアラウンド
   // 警告: これは本番環境では推奨されない方法です
-  let result = 'unknown';
-  
-  // 非同期関数を即時実行して結果を取得
-  (async () => {
-    try {
-      result = await getVersionAsync(options);
-    } catch (err) {
-      console.error('バージョン取得エラー:', err);
-    }
-  })();
-  
-  // 同期的に結果を取得するため、一時的にブロック
-  const waitUntil = Date.now() + 1000; // 最大1秒待機
-  while (result === 'unknown' && Date.now() < waitUntil) {
-    // ビジーウェイト（非推奨だが、同期APIのためのワークアラウンド）
+  try {
+    // 同期的にPromiseを実行するためのハック
+    const { execSync } = require('child_process');
+    
+    // 一時スクリプトを実行して同期的に結果を取得
+    const scriptContent = `
+      const { getVersionAsync } = require('${__filename}');
+      async function run() {
+        try {
+          const result = await getVersionAsync(${JSON.stringify(options)});
+          console.log(result);
+        } catch (err) {
+          console.error(err);
+          console.log('unknown');
+        }
+      }
+      run();
+    `;
+    
+    // 一時スクリプトを同期的に実行して結果を取得
+    const result = execSync(`node -e "${scriptContent.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf8'
+    }).trim();
+    
+    return result;
+  } catch (error) {
+    console.error('バージョン取得エラー:', error);
+    return 'unknown';
   }
-  
-  return result;
 }
 
 /**
@@ -157,26 +199,35 @@ async function hasChangesAsync(dir = '.') {
  * @returns {boolean} 変更があればtrue、なければfalse
  */
 function hasChanges(dir = '.') {
-  // 同期処理で結果を取得するためのワークアラウンド
-  let result = false;
-  
-  // 非同期関数を即時実行して結果を取得
-  (async () => {
-    try {
-      result = await hasChangesAsync(dir);
-    } catch (err) {
-      console.error('変更確認エラー:', err);
-    }
-  })();
-  
-  // 同期的に結果を取得するため、一時的にブロック
-  const waitUntil = Date.now() + 1000; // 最大1秒待機
-  while (Date.now() < waitUntil) {
-    // ビジーウェイト（非推奨だが、同期APIのためのワークアラウンド）
-    if (typeof result === 'boolean') break;
+  try {
+    // 同期的にPromiseを実行するためのハック
+    const { execSync } = require('child_process');
+    
+    // 一時スクリプトを実行して同期的に結果を取得
+    const scriptContent = `
+      const { hasChangesAsync } = require('${__filename}');
+      async function run() {
+        try {
+          const result = await hasChangesAsync(${JSON.stringify(dir)});
+          console.log(result);
+        } catch (err) {
+          console.error(err);
+          console.log('false');
+        }
+      }
+      run();
+    `;
+    
+    // 一時スクリプトを同期的に実行して結果を取得
+    const resultStr = execSync(`node -e "${scriptContent.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf8'
+    }).trim();
+    
+    return resultStr === 'true';
+  } catch (error) {
+    console.error('変更確認エラー:', error);
+    return false;
   }
-  
-  return result;
 }
 
 module.exports = {
