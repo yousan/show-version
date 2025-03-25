@@ -1,0 +1,107 @@
+name: Create Release Branch
+
+on:
+  # 手動でのみ実行可能
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      base_branch:
+        description: 'Base branch to create release from'
+        required: true
+        default: 'develop'
+        type: string
+
+jobs:
+  create-release-branch:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 全履歴を取得
+          ref: ${{ github.event.inputs.base_branch }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Calculate next version
+        id: next-version
+        run: |
+          # 現在のバージョンを取得
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # バージョン各部分を分解
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          
+          # リリースタイプに基づいて新しいバージョンを計算
+          if [[ "${{ github.event.inputs.release_type }}" == "major" ]]; then
+            NEXT_VERSION="$((MAJOR + 1)).0.0"
+          elif [[ "${{ github.event.inputs.release_type }}" == "minor" ]]; then
+            NEXT_VERSION="${MAJOR}.$((MINOR + 1)).0"
+          else
+            NEXT_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          
+          echo "::set-output name=version::$NEXT_VERSION"
+          echo "次のバージョン: $NEXT_VERSION"
+      
+      - name: Create release branch
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # リリースブランチを作成
+          RELEASE_BRANCH="release/v${{ steps.next-version.outputs.version }}"
+          git checkout -b $RELEASE_BRANCH
+          
+          # バージョン更新
+          npx json -I -f package.json -e "this.version='${{ steps.next-version.outputs.version }}'"
+          
+          # README更新
+          chmod +x bin/update_myself.sh
+          ./bin/update_myself.sh
+          
+          # 変更をコミット
+          git add package.json README.md
+          git commit -m "Prepare release v${{ steps.next-version.outputs.version }}"
+          
+          # リリースブランチをプッシュ
+          git push origin $RELEASE_BRANCH
+          
+          echo "リリースブランチ $RELEASE_BRANCH を作成しました"
+      
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Prepare release v${{ steps.next-version.outputs.version }}
+          title: Release v${{ steps.next-version.outputs.version }}
+          body: |
+            ## Release v${{ steps.next-version.outputs.version }}
+            
+            このPRはリリース v${{ steps.next-version.outputs.version }} の準備をします。
+            
+            ### 確認事項
+            - [ ] テストが全て通過すること
+            - [ ] バージョン番号が正しく更新されていること
+            - [ ] READMEのバッジが更新されていること
+            
+            ### リリース手順
+            1. このPRをレビューして承認
+            2. マージ後、"GitFlow Release Workflow" アクションを手動で実行
+          base: main
+          branch: ${{ steps.next-version.outputs.version }}-release-pr 

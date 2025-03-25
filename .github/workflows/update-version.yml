@@ -1,0 +1,83 @@
+name: Update Version Information
+
+on:
+  # リリースブランチへのプッシュ時に自動実行
+  push:
+    branches:
+      - 'release/**'
+  
+  # PRがリリースブランチからdevelopまたはmainにマージされる時
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - develop
+  
+  # 手動実行も可能に
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to update version information on'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  update-version:
+    # PRがマージされた場合のみ実行する（PRクローズイベント時）
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 全履歴を取得
+          ref: ${{ github.event.inputs.branch || github.ref }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Update version information
+        run: |
+          chmod +x bin/update_myself.sh
+          ./bin/update_myself.sh
+          
+      - name: Check for changes
+        id: changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "::set-output name=has_changes::true"
+          else
+            echo "::set-output name=has_changes::false"
+          fi
+      
+      - name: Commit changes
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # ブランチ名からバージョン情報を抽出
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          if [[ $BRANCH_NAME == release/* ]]; then
+            VERSION=$(echo $BRANCH_NAME | sed -E 's/release\/v?([0-9]+\.[0-9]+\.[0-9]+)/\1/')
+            COMMIT_MSG="Update version information to $VERSION [skip ci]"
+          else
+            COMMIT_MSG="Update version information [skip ci]"
+          fi
+          
+          git add README.md
+          git commit -m "$COMMIT_MSG"
+      
+      - name: Push changes
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.event.inputs.branch || github.ref }} 
