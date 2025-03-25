@@ -23,19 +23,44 @@ const { getVersion } = require('@yousan/show-version');
 module.exports = {
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.APP_VERSION': JSON.stringify(getVersion())
+      'process.env.APP_VERSION': JSON.stringify(getVersion()),
+      'process.env.BUILD_DATE': JSON.stringify(new Date().toISOString())
     }),
   ],
 };
 
-// Versionコンポーネント
+// 基本的なバージョン表示
 import React from 'react';
 
 const AppVersion = () => (
   <div className="app-version">Version: {process.env.APP_VERSION}</div>
 );
 
-export default AppVersion;
+// 日時情報も含むバージョン表示
+const VersionWithDate = () => (
+  <div className="version-info">
+    <div>Version: {process.env.APP_VERSION}</div>
+    <div>Build Date: {new Date(process.env.BUILD_DATE).toLocaleString()}</div>
+  </div>
+);
+
+// バージョン・コミットハッシュ・日時を組み合わせた表示
+const FullVersionInfo = () => {
+  // show-versionから取得したバージョン
+  const version = process.env.APP_VERSION;
+  // バージョンからハッシュ部分を抽出（例：v1.3.0-main-a4ea60e から a4ea60e を取得）
+  const commitHash = version.split('-').pop();
+  
+  return (
+    <div className="version-detail">
+      <div><strong>Version:</strong> {version}</div>
+      <div><strong>Commit:</strong> <a href={`https://github.com/your-repo/commit/${commitHash}`}>{commitHash}</a></div>
+      <div><strong>Built:</strong> {new Date(process.env.BUILD_DATE).toLocaleString()}</div>
+    </div>
+  );
+};
+
+export { AppVersion, VersionWithDate, FullVersionInfo };
 ```
 
 ### Vue
@@ -71,6 +96,92 @@ export default {
 </script>
 ```
 
+### CI/CD パイプラインでの活用
+
+```yaml
+# GitHub Actions ワークフロー例
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 全履歴を取得して正確なバージョン情報を得る
+      
+      - name: Get Version Info
+        id: version
+        run: |
+          # 標準形式のバージョン
+          VERSION=$(npx show-version)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
+          # 日時を含むバージョン
+          DATED_VERSION=$(npx show-version --format "{tag}-{datetime}" --datetime-format YYYYMMDDHHmmss)
+          echo "DATED_VERSION=$DATED_VERSION" >> $GITHUB_ENV
+          
+          # デプロイ識別子（短いハッシュと日付）
+          DEPLOY_ID=$(npx show-version --format "{hash}-{datetime}" --datetime-format YYYYMMDD)
+          echo "DEPLOY_ID=$DEPLOY_ID" >> $GITHUB_ENV
+      
+      - name: Build with version info
+        run: |
+          echo "Building version: ${{ env.VERSION }}"
+          echo "Date stamped version: ${{ env.DATED_VERSION }}"
+          echo "Deploy ID: ${{ env.DEPLOY_ID }}"
+          
+          # 環境変数としてバージョン情報を渡す
+          REACT_APP_VERSION="${{ env.VERSION }}" npm run build
+```
+
+### Node.js スクリプトでの活用 
+
+```javascript
+// デプロイ履歴の記録
+const fs = require('fs');
+const { getVersionAsync } = require('@yousan/show-version');
+
+async function recordDeployment() {
+  // 標準バージョン
+  const version = await getVersionAsync();
+  
+  // 日時付きバージョン（フォーマットをカスタマイズ）
+  const datedVersion = await getVersionAsync({
+    format: '{tag}-{datetime}',
+    datetimeFormat: 'ISO'
+  });
+  
+  // コミットハッシュのみ
+  const commitHash = await getVersionAsync({
+    format: '{hash}',
+    tag: false,
+    branchName: false
+  });
+  
+  // 変更有無の確認
+  const { hasChangesAsync } = require('@yousan/show-version');
+  const isDirty = await hasChangesAsync();
+  
+  // デプロイ記録
+  const record = {
+    version,
+    datedVersion,
+    commitHash,
+    isDirty,
+    timestamp: new Date().toISOString()
+  };
+  
+  // JSONとして保存
+  fs.writeFileSync(
+    `deploy-history/${record.timestamp.split('T')[0]}.json`,
+    JSON.stringify(record, null, 2)
+  );
+  
+  console.log(`Deployment recorded: ${version} (${record.timestamp})`);
+}
+
+recordDeployment().catch(console.error);
+```
+
 ## Features
 
 - **No Git Binary Dependency**: Works even if Git is not installed on the system
@@ -102,12 +213,6 @@ show-version
 
 # Custom format
 show-version --format "{tag}-{hash}"
-
-# With datetime information
-show-version --format "{tag}-{datetime}"
-
-# Specify datetime format
-show-version --format "{tag}-{datetime}" --datetime-format YYYYMMDDHHmmss
 
 # Exclude tag information
 show-version --no-tag
@@ -169,29 +274,25 @@ if (hasChanges()) {
 
 ### CLI Options
 
-| Option           | Description                           | Default Value            |
-| ---------------- | ------------------------------------- | ------------------------ |
-| --format, -f     | Output format                         | {tag}-{branch}-{hash}    |
-| --no-tag         | Exclude tag information               | false                    |
-| --no-branch      | Exclude branch name                   | false                    |
-| --no-hash        | Exclude commit hash                   | false                    |
-| --no-datetime    | Exclude datetime information          | false                    |
-| --datetime-format| Datetime format (ISO, YYYYMMDDHHmmss) | ISO                      |
-| --dirty, -d      | Add flag for uncommitted changes      | false                    |
-| --dirty-suffix   | String to append when dirty           | -dirty                   |
-| --dir            | Git repository directory path         | . (current directory)    |
+| Option         | Description                           | Default Value            |
+| -------------- | ------------------------------------- | ------------------------ |
+| --format, -f   | Output format                         | {tag}-{branch}-{hash}    |
+| --no-tag       | Exclude tag information               | false                    |
+| --no-branch    | Exclude branch name                   | false                    |
+| --no-hash      | Exclude commit hash                   | false                    |
+| --dirty, -d    | Add flag for uncommitted changes      | false                    |
+| --dirty-suffix | String to append when dirty           | -dirty                   |
+| --dir          | Git repository directory path         | . (current directory)    |
 
 ### API Options
 
 ```javascript
 getVersionAsync({
-  format: '{tag}-{branch}-{hash}-{datetime}', // Output format with datetime
-  tag: true,                        // Include tag info
-  branchName: true,                 // Include branch name
-  commitHash: true,                 // Include commit hash
-  datetime: true,                   // Include datetime info
-  datetimeFormat: 'ISO',            // Datetime format (ISO, YYYYMMDDHHmmss, YYYYMMDD)
-  dir: '/path/to/repo'              // Git repository path (default: current directory)
+  format: '{tag}-{branch}-{hash}', // Output format
+  tag: true,                       // Include tag info
+  branchName: true,                // Include branch name
+  commitHash: true,                // Include commit hash
+  dir: '/path/to/repo'             // Git repository path (default: current directory)
 });
 ```
 
