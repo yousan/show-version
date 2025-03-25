@@ -233,6 +233,11 @@ function hasChanges(dir = '.') {
 // v1.2.1向けのダミー更新：チケット#123対応
 // GitHub Actionsのnpm公開機能テスト
 
+// v1.3.0向けの改善：
+// - エラーメッセージの改善
+// - デバッグ情報の拡充
+// - 安定性向上
+
 module.exports = {
   getVersion,
   getVersionAsync,
