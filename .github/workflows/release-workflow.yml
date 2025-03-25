@@ -1,119 +1,71 @@
-name: GitFlow Release Workflow
+name: Update Version Information
 
 on:
-  # リリースブランチが完了した時にmainとdevelopの両方にマージし、タグを作成
+  push:
+    tags:
+      - 'v*'  # タグが作成されたときに実行
+  
+  # 手動実行も可能に
   workflow_dispatch:
     inputs:
-      release_version:
-        description: 'Release version (e.g. 1.2.3)'
-        required: true
-        type: string
-      release_branch:
-        description: 'Release branch to finalize (e.g. release/v1.2.3)'
-        required: true
+      version:
+        description: '更新するバージョン（指定しない場合はpackage.jsonから取得）'
+        required: false
         type: string
 
 jobs:
-  finalize-release:
+  update-badges:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 全履歴を取得
-      
-      - name: Setup Git
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-      
-      - name: Checkout release branch
-        run: |
-          git checkout ${{ github.event.inputs.release_branch }} || (echo "Release branch not found" && exit 1)
+          fetch-depth: 0  # タグ情報を取得するため全履歴を取得
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          registry-url: 'https://registry.npmjs.org'
-          
+      
       - name: Install dependencies
         run: npm ci
       
-      - name: Run tests
-        run: npm test
-      
-      - name: Update version in package.json
+      - name: Get version
+        id: get-version
         run: |
-          # package.jsonのバージョンを更新
-          npx json -I -f package.json -e "this.version='${{ github.event.inputs.release_version }}'"
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            # 手動実行時に指定されたバージョンを使用
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # タグからバージョンを取得
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            # package.jsonからバージョンを取得
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "バージョン: $VERSION"
       
-      - name: Update version information in README
+      - name: Update README badges
         run: |
           chmod +x bin/update_myself.sh
           ./bin/update_myself.sh
-      
-      - name: Commit version update
-        run: |
-          git add package.json README.md
-          git commit -m "Release v${{ github.event.inputs.release_version }}"
-      
-      - name: Merge to main
-        run: |
-          git checkout main
-          git pull origin main
-          git merge --no-ff ${{ github.event.inputs.release_branch }} -m "Merge release branch '${{ github.event.inputs.release_branch }}' into main"
-      
-      - name: Create tag
-        run: |
-          git tag -a v${{ github.event.inputs.release_version }} -m "Release v${{ github.event.inputs.release_version }}"
-      
-      - name: Merge to develop
-        run: |
-          git checkout develop
-          git pull origin develop
-          git merge --no-ff ${{ github.event.inputs.release_branch }} -m "Merge release branch '${{ github.event.inputs.release_branch }}' into develop"
-      
-      - name: Push changes and tags
-        run: |
-          git push origin main
-          git push origin develop
-          git push origin --tags
-          git push origin --delete ${{ github.event.inputs.release_branch }}
-      
-      - name: Publish to npm
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           
-  create-release:
-    needs: finalize-release
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main  # mainブランチを使用
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if [[ -n "$(git status --porcelain README.md)" ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
       
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ github.event.inputs.release_version }}
-          name: Release v${{ github.event.inputs.release_version }}
-          draft: false
-          prerelease: false
-          body: |
-            # Release v${{ github.event.inputs.release_version }}
-            
-            ## Changes
-            
-            Please check the [CHANGELOG.md](https://github.com/yousan/show-version/blob/main/CHANGELOG.md) for the full list of changes.
-            
-            ## How to Install
-            
-            ```bash
-            npm install show-version@${{ github.event.inputs.release_version }}
-            ``` 
+      - name: Commit changes
+        if: steps.check-changes.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md
+          git commit -m "docs: READMEのバージョン表示を ${{ steps.get-version.outputs.version }} に更新 [skip ci]"
+          git push 
