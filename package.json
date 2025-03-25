@@ -1,6 +1,6 @@
 {
   "name": "@yousan/show-version",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Get version information from Git repositories without Git binary dependency",
   "main": "src/index.js",
   "bin": {
