@@ -21,6 +21,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v3
         with:
@@ -62,8 +65,8 @@ jobs:
           ./bin/update_myself.sh
           if [[ -n $(git status --porcelain README.md) ]]; then
             echo "README.md has changes. Committing."
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
             git add README.md
             git commit -m "docs: update version badges [skip ci]"
             git push
