@@ -91,17 +91,29 @@ jobs:
       
       # タグプッシュ時またはオプションで公開が選択された場合にのみnpmにパブリッシュする
       - name: Publish to npm
-        if: github.event_name == 'push' && github.ref_type == 'tag' || github.event.inputs.publish_npm == 'true'
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || github.event.inputs.publish_npm == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org/'
+          always-auth: true
           scope: '@yousan'
       
+      - name: Check npm token
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || github.event.inputs.publish_npm == 'true'
+        run: |
+          if [[ -n "${{ secrets.NPM_TOKEN }}" ]]; then
+            echo "NPM_TOKEN is set"
+          else
+            echo "::error::NPM_TOKEN is not set in repository secrets"
+            exit 1
+          fi
+      
       - name: Publish package
-        if: github.event_name == 'push' && github.ref_type == 'tag' || github.event.inputs.publish_npm == 'true'
+        if: (github.event_name == 'push' && github.ref_type == 'tag') || github.event.inputs.publish_npm == 'true'
         run: |
           echo "npmにパッケージを公開します: @yousan/show-version@${{ steps.get-version.outputs.version }}"
+          npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
