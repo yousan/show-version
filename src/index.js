@@ -22,6 +22,7 @@ async function getVersionAsync(options = {}) {
   } = options;
   
   let version = format;
+  let currentBranch = 'unknown';
   
   try {
     // ブランチ名を取得
@@ -32,7 +33,8 @@ async function getVersionAsync(options = {}) {
           dir,
           fullname: false
         });
-        version = version.replace('{branch}', branch || 'unknown');
+        currentBranch = branch || 'unknown';
+        version = version.replace('{branch}', currentBranch);
       } catch (e) {
         version = version.replace('{branch}', 'unknown');
       }
@@ -59,32 +61,29 @@ async function getVersionAsync(options = {}) {
     
     // タグ情報を取得
     if (tag) {
+      let tagVersion = '0.0.0';
+      
       try {
-        const tags = await git.listTags({ fs, dir });
-        
-        // タグがあれば最新のものを取得（セマンティックバージョンでソート）
-        let latestTag = '0.0.0';
-        if (tags.length > 0) {
-          // タグを取得できた場合、セマンティックバージョンとして並べ替え
-          tags.sort((a, b) => {
-            // semverではないタグも扱えるように簡易的な比較を実装
-            const aParts = a.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
-            const bParts = b.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
-            
-            for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-              const aVal = aParts[i] || 0;
-              const bVal = bParts[i] || 0;
-              if (aVal !== bVal) {
-                return aVal - bVal;
-              }
-            }
-            return 0;
-          });
+        // リリースブランチからバージョン情報を取得
+        // 例: release/v1.2.3 → 1.2.3
+        if (currentBranch.startsWith('release/')) {
+          // リリースブランチからバージョン文字列を抽出
+          const releaseVersion = currentBranch.substring('release/'.length)
+                                            .replace(/^v/, ''); // 先頭の 'v' があれば削除
           
-          latestTag = tags[tags.length - 1];
+          if (releaseVersion && /^\d+\.\d+\.\d+/.test(releaseVersion)) {
+            // セマンティックバージョンの形式であれば、そのバージョンを使用
+            tagVersion = releaseVersion;
+          } else {
+            // 形式が異なる場合は通常のタグ取得処理
+            tagVersion = await getLatestTag();
+          }
+        } else {
+          // リリースブランチでない場合は通常のタグ取得処理
+          tagVersion = await getLatestTag();
         }
         
-        version = version.replace('{tag}', latestTag);
+        version = version.replace('{tag}', tagVersion);
       } catch (e) {
         version = version.replace('{tag}', '0.0.0');
       }
@@ -100,6 +99,39 @@ async function getVersionAsync(options = {}) {
     console.error('バージョン情報の取得に失敗しました:', error);
     return 'unknown';
   }
+}
+
+/**
+ * 最新のタグを取得する内部関数
+ * @param {string} dir - Gitリポジトリのディレクトリパス
+ * @returns {Promise<string>} 最新のタグ（なければ'0.0.0'）
+ */
+async function getLatestTag(dir = '.') {
+  const tags = await git.listTags({ fs, dir });
+  
+  // タグがあれば最新のものを取得（セマンティックバージョンでソート）
+  let latestTag = '0.0.0';
+  if (tags.length > 0) {
+    // タグを取得できた場合、セマンティックバージョンとして並べ替え
+    tags.sort((a, b) => {
+      // semverではないタグも扱えるように簡易的な比較を実装
+      const aParts = a.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
+      const bParts = b.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
+      
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0;
+        const bVal = bParts[i] || 0;
+        if (aVal !== bVal) {
+          return aVal - bVal;
+        }
+      }
+      return 0;
+    });
+    
+    latestTag = tags[tags.length - 1];
+  }
+  
+  return latestTag;
 }
 
 /**
