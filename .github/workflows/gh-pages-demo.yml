@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
           
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
           
@@ -29,21 +29,23 @@ jobs:
           cd examples/react-version-display
           npm install
           
-      - name: Get Current Version
-        id: get-version
+      - name: Install show-version
+        run: npm install -g @yousan/show-version
+          
+      - name: Get version
+        id: version
         run: |
-          # show-versionパッケージをグローバルにインストール
-          npm install -g .
-          # バージョン情報を取得
           VERSION=$(show-version)
-          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Current version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
+      - name: Set version
+        run: echo "REACT_APP_VERSION=${{ env.VERSION }}" >> $GITHUB_ENV
           
       - name: Build
         run: |
           cd examples/react-version-display
           # 環境変数としてバージョンを設定
-          REACT_APP_VERSION="${{ env.APP_VERSION }}" npm run build
+          REACT_APP_VERSION="${{ env.REACT_APP_VERSION }}" npm run build
           # GitHub Pages用に.nojekyllファイルを作成
           touch build/.nojekyll
           
