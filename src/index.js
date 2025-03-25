@@ -109,26 +109,36 @@ async function getVersionAsync(options = {}) {
  * @returns {string} バージョン情報
  */
 function getVersion(options = {}) {
-  // 同期処理で結果を取得するためのワークアラウンド
   // 警告: これは本番環境では推奨されない方法です
-  let result = 'unknown';
-  
-  // 非同期関数を即時実行して結果を取得
-  (async () => {
-    try {
-      result = await getVersionAsync(options);
-    } catch (err) {
-      console.error('バージョン取得エラー:', err);
-    }
-  })();
-  
-  // 同期的に結果を取得するため、一時的にブロック
-  const waitUntil = Date.now() + 1000; // 最大1秒待機
-  while (result === 'unknown' && Date.now() < waitUntil) {
-    // ビジーウェイト（非推奨だが、同期APIのためのワークアラウンド）
+  try {
+    // 同期的にPromiseを実行するためのハック
+    const { execSync } = require('child_process');
+    
+    // 一時スクリプトを実行して同期的に結果を取得
+    const scriptContent = `
+      const { getVersionAsync } = require('${__filename}');
+      async function run() {
+        try {
+          const result = await getVersionAsync(${JSON.stringify(options)});
+          console.log(result);
+        } catch (err) {
+          console.error(err);
+          console.log('unknown');
+        }
+      }
+      run();
+    `;
+    
+    // 一時スクリプトを同期的に実行して結果を取得
+    const result = execSync(`node -e "${scriptContent.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf8'
+    }).trim();
+    
+    return result;
+  } catch (error) {
+    console.error('バージョン取得エラー:', error);
+    return 'unknown';
   }
-  
-  return result;
 }
 
 /**
@@ -157,26 +167,35 @@ async function hasChangesAsync(dir = '.') {
  * @returns {boolean} 変更があればtrue、なければfalse
  */
 function hasChanges(dir = '.') {
-  // 同期処理で結果を取得するためのワークアラウンド
-  let result = false;
-  
-  // 非同期関数を即時実行して結果を取得
-  (async () => {
-    try {
-      result = await hasChangesAsync(dir);
-    } catch (err) {
-      console.error('変更確認エラー:', err);
-    }
-  })();
-  
-  // 同期的に結果を取得するため、一時的にブロック
-  const waitUntil = Date.now() + 1000; // 最大1秒待機
-  while (Date.now() < waitUntil) {
-    // ビジーウェイト（非推奨だが、同期APIのためのワークアラウンド）
-    if (typeof result === 'boolean') break;
+  try {
+    // 同期的にPromiseを実行するためのハック
+    const { execSync } = require('child_process');
+    
+    // 一時スクリプトを実行して同期的に結果を取得
+    const scriptContent = `
+      const { hasChangesAsync } = require('${__filename}');
+      async function run() {
+        try {
+          const result = await hasChangesAsync(${JSON.stringify(dir)});
+          console.log(result);
+        } catch (err) {
+          console.error(err);
+          console.log('false');
+        }
+      }
+      run();
+    `;
+    
+    // 一時スクリプトを同期的に実行して結果を取得
+    const resultStr = execSync(`node -e "${scriptContent.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf8'
+    }).trim();
+    
+    return resultStr === 'true';
+  } catch (error) {
+    console.error('変更確認エラー:', error);
+    return false;
   }
-  
-  return result;
 }
 
 module.exports = {
