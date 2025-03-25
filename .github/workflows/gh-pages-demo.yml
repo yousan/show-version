@@ -1,0 +1,55 @@
+name: Deploy React Demo to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'examples/react-version-display/**'
+      - '.github/workflows/gh-pages-demo.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Dependencies
+        run: |
+          cd examples/react-version-display
+          npm install
+          
+      - name: Get Current Version
+        id: get-version
+        run: |
+          # show-versionパッケージをグローバルにインストール
+          npm install -g .
+          # バージョン情報を取得
+          VERSION=$(show-version)
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Current version: $VERSION"
+          
+      - name: Build
+        run: |
+          cd examples/react-version-display
+          # 環境変数としてバージョンを設定
+          REACT_APP_VERSION="${{ env.APP_VERSION }}" npm run build
+          # GitHub Pages用に.nojekyllファイルを作成
+          touch build/.nojekyll
+          
+      - name: Deploy to GitHub Pages 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: examples/react-version-display/build
+          clean: true 
