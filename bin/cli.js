@@ -10,7 +10,7 @@ const argv = yargs(hideBin(process.argv))
   .option('format', {
     alias: 'f',
     type: 'string',
-    description: 'バージョン情報のフォーマット ({tag}, {branch}, {hash})',
+    description: 'バージョン情報のフォーマット ({tag}, {branch}, {hash}, {datetime})',
     default: '{tag}-{branch}-{hash}'
   })
   .option('no-tag', {
@@ -27,6 +27,17 @@ const argv = yargs(hideBin(process.argv))
     type: 'boolean',
     description: 'コミットハッシュを含めない',
     default: false
+  })
+  .option('no-datetime', {
+    type: 'boolean',
+    description: '日時情報を含めない',
+    default: false
+  })
+  .option('datetime-format', {
+    type: 'string',
+    description: '日時のフォーマット (ISO, YYYYMMDDHHmmss, YYYYMMDD)',
+    default: 'ISO',
+    choices: ['ISO', 'YYYYMMDDHHmmss', 'YYYYMMDD']
   })
   .option('dirty', {
     alias: 'd',
@@ -58,6 +69,8 @@ async function main() {
       tag: !argv.noTag,
       branchName: !argv.noBranch,
       commitHash: !argv.noHash,
+      datetime: !argv.noDatetime,
+      datetimeFormat: argv.datetimeFormat,
       dir: argv.dir
     };
     

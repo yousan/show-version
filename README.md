@@ -103,6 +103,12 @@ show-version
 # Custom format
 show-version --format "{tag}-{hash}"
 
+# With datetime information
+show-version --format "{tag}-{datetime}"
+
+# Specify datetime format
+show-version --format "{tag}-{datetime}" --datetime-format YYYYMMDDHHmmss
+
 # Exclude tag information
 show-version --no-tag
 
@@ -163,25 +169,29 @@ if (hasChanges()) {
 
 ### CLI Options
 
-| Option         | Description                           | Default Value            |
-| -------------- | ------------------------------------- | ------------------------ |
-| --format, -f   | Output format                         | {tag}-{branch}-{hash}    |
-| --no-tag       | Exclude tag information               | false                    |
-| --no-branch    | Exclude branch name                   | false                    |
-| --no-hash      | Exclude commit hash                   | false                    |
-| --dirty, -d    | Add flag for uncommitted changes      | false                    |
-| --dirty-suffix | String to append when dirty           | -dirty                   |
-| --dir          | Git repository directory path         | . (current directory)    |
+| Option           | Description                           | Default Value            |
+| ---------------- | ------------------------------------- | ------------------------ |
+| --format, -f     | Output format                         | {tag}-{branch}-{hash}    |
+| --no-tag         | Exclude tag information               | false                    |
+| --no-branch      | Exclude branch name                   | false                    |
+| --no-hash        | Exclude commit hash                   | false                    |
+| --no-datetime    | Exclude datetime information          | false                    |
+| --datetime-format| Datetime format (ISO, YYYYMMDDHHmmss) | ISO                      |
+| --dirty, -d      | Add flag for uncommitted changes      | false                    |
+| --dirty-suffix   | String to append when dirty           | -dirty                   |
+| --dir            | Git repository directory path         | . (current directory)    |
 
 ### API Options
 
 ```javascript
 getVersionAsync({
-  format: '{tag}-{branch}-{hash}', // Output format
-  tag: true,                       // Include tag info
-  branchName: true,                // Include branch name
-  commitHash: true,                // Include commit hash
-  dir: '/path/to/repo'             // Git repository path (default: current directory)
+  format: '{tag}-{branch}-{hash}-{datetime}', // Output format with datetime
+  tag: true,                        // Include tag info
+  branchName: true,                 // Include branch name
+  commitHash: true,                 // Include commit hash
+  datetime: true,                   // Include datetime info
+  datetimeFormat: 'ISO',            // Datetime format (ISO, YYYYMMDDHHmmss, YYYYMMDD)
+  dir: '/path/to/repo'              // Git repository path (default: current directory)
 });
 ```
 
