@@ -4,56 +4,54 @@ const { getVersionAsync, hasChangesAsync } = require('../src/index');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 
-// コマンドライン引数の解析
+// Parse command line arguments
 const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 [options]')
   .option('format', {
     alias: 'f',
     type: 'string',
-    description: 'バージョン情報のフォーマット ({tag}, {branch}, {hash}, {datetime})',
-    default: '{tag}-{branch}-{hash}'
+    default: '{tag}-{branch}-{hash}',
+    description: 'Version information format ({tag}, {branch}, {hash}, {datetime})',
   })
   .option('no-tag', {
     type: 'boolean',
-    description: 'タグ情報を含めない',
-    default: false
+    default: false,
+    description: 'Exclude tag information',
   })
   .option('no-branch', {
     type: 'boolean',
-    description: 'ブランチ名を含めない',
-    default: false
+    default: false,
+    description: 'Exclude branch name',
   })
   .option('no-hash', {
     type: 'boolean',
-    description: 'コミットハッシュを含めない',
-    default: false
+    default: false,
+    description: 'Exclude commit hash',
   })
   .option('no-datetime', {
     type: 'boolean',
-    description: '日時情報を含めない',
-    default: false
+    default: false,
+    description: 'Exclude datetime information',
   })
   .option('datetime-format', {
     type: 'string',
-    description: '日時のフォーマット (ISO, YYYYMMDDHHmmss, YYYYMMDD)',
     default: 'ISO',
-    choices: ['ISO', 'YYYYMMDDHHmmss', 'YYYYMMDD']
+    description: 'Datetime format (ISO, YYYYMMDDHHmmss, YYYYMMDD)',
+  })
+  .option('dir', {
+    type: 'string',
+    default: '.',
   })
   .option('dirty', {
     alias: 'd',
     type: 'boolean',
-    description: '未コミットの変更がある場合に表示するフラグ',
-    default: false
+    default: false,
+    description: 'Flag to display when there are uncommitted changes',
   })
   .option('dirty-suffix', {
     type: 'string',
-    description: '未コミットの変更がある場合に追加する文字列',
-    default: '-dirty'
-  })
-  .option('dir', {
-    type: 'string',
-    description: 'Gitリポジトリのディレクトリパス',
-    default: '.'
+    default: '-dirty',
+    description: 'String to append when there are uncommitted changes',
   })
   .help()
   .alias('help', 'h')
@@ -61,7 +59,7 @@ const argv = yargs(hideBin(process.argv))
   .alias('version', 'v')
   .argv;
 
-// メイン処理（非同期）
+// Main processing (asynchronous)
 async function main() {
   try {
     const options = {
@@ -74,23 +72,23 @@ async function main() {
       dir: argv.dir
     };
     
-    // バージョン情報を取得
+    // Get version information
     let version = await getVersionAsync(options);
     
-    // 未コミットの変更があり、dirtyオプションが有効な場合
+    // If there are uncommitted changes and the dirty option is enabled
     if (argv.dirty && await hasChangesAsync(argv.dir)) {
       version += argv.dirtySuffix;
     }
     
-    // バージョン情報を標準出力に表示
+    // Display version information to standard output
     console.log(version);
     
     process.exit(0);
   } catch (error) {
-    console.error('エラーが発生しました:', error);
+    console.error('An error occurred:', error);
     process.exit(1);
   }
 }
 
-// 非同期メイン関数を実行
+// Execute the asynchronous main function
 main(); 

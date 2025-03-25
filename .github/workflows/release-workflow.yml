@@ -1,117 +1,76 @@
-name: Update Version Information and Publish
+name: Release Workflow
 
 on:
   push:
     tags:
-      - 'v*'  # タグが作成されたときに実行
+      - 'v*'  # Execute when tags are created
   
-  # 手動実行も可能に
+  # Allow manual execution
   workflow_dispatch:
     inputs:
       version:
-        description: '更新するバージョン（指定しない場合はpackage.jsonから取得）'
+        description: 'Version to update (if not specified, get from package.json)'
         required: false
         type: string
-      publish_npm:
-        description: 'npmにパッケージを公開する'
+      publish:
+        description: 'Publish package to npm'
         required: false
         type: boolean
         default: false
 
 jobs:
-  update-badges:
+  release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Debug event info
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Ref name: ${{ github.ref_name }}"
-          echo "Ref type: ${{ github.ref_type }}"
-      
-      - name: Checkout main branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
-          ref: main
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+          registry-url: 'https://registry.npmjs.org'
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Get version
-        id: get-version
+
+      # Use version from manual execution input
+      - name: Get version from input
+        if: github.event_name == 'workflow_dispatch' && inputs.version != ''
         run: |
-          if [[ -n "${{ github.event.inputs.version }}" ]]; then
-            # 手動実行時に指定されたバージョンを使用
-            VERSION="${{ github.event.inputs.version }}"
-          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            # タグからバージョンを取得
-            VERSION="${{ github.ref_name }}"
-            VERSION="${VERSION#v}"
-            echo "From tag: $VERSION"
-          else
-            # package.jsonからバージョンを取得
-            VERSION=$(node -p "require('./package.json').version")
-            echo "From package.json: $VERSION"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "使用するバージョン: $VERSION"
-      
+          echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+
+      # Get version from tag
+      - name: Get version from tag
+        if: github.event_name == 'push'
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      # Get version from package.json
+      - name: Get version from package.json
+        if: env.VERSION == ''
+        run: |
+          echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
+      - name: Show version
+        run: |
+          echo "Version to use: $VERSION"
+
       - name: Update README badges
         run: |
-          chmod +x bin/update_myself.sh
           ./bin/update_myself.sh
-          cat README.md | grep -A 5 "npm version"
-      
-      - name: Commit and push if changed
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          if [[ -n "$(git status --porcelain README.md)" ]]; then
-            echo "README.mdに変更があります。コミットします。"
+          if [[ -n $(git status --porcelain README.md) ]]; then
+            echo "README.md has changes. Committing."
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
             git add README.md
-            git commit -m "docs: READMEのバージョン表示を ${{ steps.get-version.outputs.version }} に更新 [skip ci]"
-            
-            # 明示的にトークンを指定してプッシュ
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-            git push origin main
-            echo "プッシュ完了"
-          else
-            echo "README.mdに変更はありません。"
+            git commit -m "docs: update version badges [skip ci]"
+            git push
           fi
-      
-      # タグプッシュ時またはオプションで公開が選択された場合にのみnpmにパブリッシュする
-      - name: Setup Node.js for npm publish
-        if: (github.event_name == 'push' && github.ref_type == 'tag') || github.event.inputs.publish_npm == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          registry-url: 'https://registry.npmjs.org/'
-          always-auth: true
-          scope: '@yousan'
-      
-      - name: Check npm token
-        if: (github.event_name == 'push' && github.ref_type == 'tag') || github.event.inputs.publish_npm == 'true'
-        run: |
-          if [[ -n "${{ secrets.NPM_TOKEN }}" ]]; then
-            echo "NPM_TOKEN is set"
-          else
-            echo "::error::NPM_TOKEN is not set in repository secrets"
-            exit 1
-          fi
-      
-      - name: Publish package to npm
-        if: (github.event_name == 'push' && github.ref_type == 'tag') || github.event.inputs.publish_npm == 'true'
-        uses: JS-DevTools/npm-publish@v3
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          access: public 
+
+      - name: Publish to npm
+        if: inputs.publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 

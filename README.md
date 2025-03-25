@@ -8,7 +8,7 @@
 <!-- auto rewrite end here -->
 
 
-[![GitHub license](https://img.shields.io/github/license/yousan/show-version?v=1.0.0)](https://github.com/yousan/show-version/blob/main/LICENSE)
+[![GitHub license](https://img.shields.io/badge/github/license/yousan/show-version?v=1.0.0)](https://github.com/yousan/show-version/blob/main/LICENSE)
 
 A simple utility to extract version identifiers (tags, branch names, commit hashes, etc.) from Git repositories. **No Git binary dependency** - operates with pure JavaScript implementation.
 
@@ -17,7 +17,7 @@ A simple utility to extract version identifiers (tags, branch names, commit hash
 ### React
 
 ```jsx
-// ビルド設定 (webpack.config.js)
+// Build configuration (webpack.config.js)
 const { getVersion } = require('@yousan/show-version');
 
 module.exports = {
@@ -29,14 +29,14 @@ module.exports = {
   ],
 };
 
-// 基本的なバージョン表示
+// Basic version display
 import React from 'react';
 
 const AppVersion = () => (
   <div className="app-version">Version: {process.env.APP_VERSION}</div>
 );
 
-// 日時情報も含むバージョン表示
+// Version display with date information
 const VersionWithDate = () => (
   <div className="version-info">
     <div>Version: {process.env.APP_VERSION}</div>
@@ -44,11 +44,11 @@ const VersionWithDate = () => (
   </div>
 );
 
-// バージョン・コミットハッシュ・日時を組み合わせた表示
+// Combined version, commit hash, and date display
 const FullVersionInfo = () => {
-  // show-versionから取得したバージョン
+  // Version obtained from show-version
   const version = process.env.APP_VERSION;
-  // バージョンからハッシュ部分を抽出（例：v1.3.0-main-a4ea60e から a4ea60e を取得）
+  // Extract hash part from version (e.g., get a4ea60e from v1.3.0-main-a4ea60e)
   const commitHash = version.split('-').pop();
   
   return (
@@ -96,30 +96,30 @@ export default {
 </script>
 ```
 
-### CI/CD パイプラインでの活用
+### CI/CD Pipeline Integration
 
 ```yaml
-# GitHub Actions ワークフロー例
+# GitHub Actions workflow example
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 全履歴を取得して正確なバージョン情報を得る
+          fetch-depth: 0  # Get full history for accurate version information
       
       - name: Get Version Info
         id: version
         run: |
-          # 標準形式のバージョン
+          # Standard version format
           VERSION=$(npx show-version)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           
-          # 日時を含むバージョン
+          # Version with datetime
           DATED_VERSION=$(npx show-version --format "{tag}-{datetime}" --datetime-format YYYYMMDDHHmmss)
           echo "DATED_VERSION=$DATED_VERSION" >> $GITHUB_ENV
           
-          # デプロイ識別子（短いハッシュと日付）
+          # Deploy identifier (short hash and date)
           DEPLOY_ID=$(npx show-version --format "{hash}-{datetime}" --datetime-format YYYYMMDD)
           echo "DEPLOY_ID=$DEPLOY_ID" >> $GITHUB_ENV
       
@@ -129,39 +129,39 @@ jobs:
           echo "Date stamped version: ${{ env.DATED_VERSION }}"
           echo "Deploy ID: ${{ env.DEPLOY_ID }}"
           
-          # 環境変数としてバージョン情報を渡す
+          # Pass version information as environment variables
           REACT_APP_VERSION="${{ env.VERSION }}" npm run build
 ```
 
-### Node.js スクリプトでの活用 
+### Node.js Script Usage
 
 ```javascript
-// デプロイ履歴の記録
+// Deployment history recording
 const fs = require('fs');
 const { getVersionAsync } = require('@yousan/show-version');
 
 async function recordDeployment() {
-  // 標準バージョン
+  // Standard version
   const version = await getVersionAsync();
   
-  // 日時付きバージョン（フォーマットをカスタマイズ）
+  // Version with datetime (custom format)
   const datedVersion = await getVersionAsync({
     format: '{tag}-{datetime}',
     datetimeFormat: 'ISO'
   });
   
-  // コミットハッシュのみ
+  // Commit hash only
   const commitHash = await getVersionAsync({
     format: '{hash}',
     tag: false,
     branchName: false
   });
   
-  // 変更有無の確認
+  // Check for changes
   const { hasChangesAsync } = require('@yousan/show-version');
   const isDirty = await hasChangesAsync();
   
-  // デプロイ記録
+  // Deployment record
   const record = {
     version,
     datedVersion,
@@ -170,7 +170,7 @@ async function recordDeployment() {
     timestamp: new Date().toISOString()
   };
   
-  // JSONとして保存
+  // Save as JSON
   fs.writeFileSync(
     `deploy-history/${record.timestamp.split('T')[0]}.json`,
     JSON.stringify(record, null, 2)
