@@ -230,6 +230,9 @@ function hasChanges(dir = '.') {
   }
 }
 
+// v1.2.1向けのダミー更新：チケット#123対応
+// GitHub Actionsのnpm公開機能テスト
+
 module.exports = {
   getVersion,
   getVersionAsync,
