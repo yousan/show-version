@@ -8,6 +8,8 @@ const path = require('path');
  * @param {boolean} options.commitHash - コミットハッシュを含めるかどうか
  * @param {boolean} options.branchName - ブランチ名を含めるかどうか
  * @param {boolean} options.tag - タグ情報を含めるかどうか
+ * @param {boolean} options.datetime - 日時情報を含めるかどうか
+ * @param {string} options.datetimeFormat - 日時のフォーマット（'ISO'または'YYYYMMDDHHmmss'）
  * @param {string} options.format - 出力フォーマット
  * @param {string} options.dir - Gitリポジトリのディレクトリパス
  * @returns {Promise<string>} バージョン情報
@@ -17,6 +19,8 @@ async function getVersionAsync(options = {}) {
     commitHash = true,
     branchName = true,
     tag = true,
+    datetime = true,
+    datetimeFormat = 'ISO',
     format = '{tag}-{branch}-{hash}',
     dir = '.'
   } = options;
@@ -89,6 +93,28 @@ async function getVersionAsync(options = {}) {
       }
     } else {
       version = version.replace('{tag}', '');
+    }
+    
+    // 日時情報を追加
+    if (datetime && version.includes('{datetime}')) {
+      const now = new Date();
+      let dateTimeStr;
+      
+      // フォーマットに応じて日時文字列を生成
+      if (datetimeFormat === 'ISO') {
+        // ISO形式: YYYY-MM-DDTHH:mm:ss
+        dateTimeStr = now.toISOString().replace(/\.\d+Z$/, '');
+      } else if (datetimeFormat === 'YYYYMMDDHHmmss') {
+        // 連続形式: YYYYMMDDHHmmss
+        const pad = (num) => String(num).padStart(2, '0');
+        dateTimeStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      } else {
+        // デフォルト形式: YYYYMMDD
+        const pad = (num) => String(num).padStart(2, '0');
+        dateTimeStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+      }
+      
+      version = version.replace('{datetime}', dateTimeStr);
     }
     
     // フォーマットを整理（余計なハイフン等を削除）
@@ -237,6 +263,13 @@ function hasChanges(dir = '.') {
 // - エラーメッセージの改善
 // - デバッグ情報の拡充
 // - 安定性向上
+// - 日時情報の追加: {datetime}フォーマットに対応
+
+// v1.4.0向けの改善：
+// - 日時フォーマットプレースホルダー {datetime} の追加
+// - 複数の日時フォーマットオプション（ISO, YYYYMMDDHHmmss, YYYYMMDD）
+// - コマンドラインオプション拡張（--datetime-format, --no-datetime）
+// - ドキュメントとサンプルの拡充
 
 module.exports = {
   getVersion,
