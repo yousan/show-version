@@ -24,20 +24,20 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Install Dependencies
+      - name: Install Package Dependencies
         run: |
-          cd examples/react-version-display
-          npm install
+          npm ci
           
       - name: Get Current Version
         id: get-version
         run: |
-          # show-versionパッケージをグローバルにインストール
-          npm install -g .
-          # バージョン情報を取得
-          VERSION=$(show-version)
-          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Current version: $VERSION"
+          node -e "const version = require('./package.json').version; console.log('APP_VERSION=' + version)" >> $GITHUB_ENV
+          echo "Current version: ${{ env.APP_VERSION }}"
+          
+      - name: Install React App Dependencies
+        run: |
+          cd examples/react-version-display
+          npm install
           
       - name: Build
         run: |
