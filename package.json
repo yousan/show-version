@@ -10,7 +10,8 @@
     "test": "mocha test",
     "example:basic": "node examples/basic-usage.js",
     "example:cli": "bash examples/cli-examples.sh",
-    "example:ci": "node examples/ci-integration.js"
+    "example:ci": "node examples/ci-integration.js",
+    "docs:build": "mkdir -p docs && cp README.md docs/index.md"
   },
   "keywords": [
     "git",
