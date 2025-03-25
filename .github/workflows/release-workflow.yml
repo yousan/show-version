@@ -80,6 +80,9 @@ jobs:
             echo "README.mdに変更があります。コミットします。"
             git add README.md
             git commit -m "docs: READMEのバージョン表示を ${{ steps.get-version.outputs.version }} に更新 [skip ci]"
+            
+            # 明示的にトークンを指定してプッシュ
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
             git push origin main
             echo "プッシュ完了"
           else
