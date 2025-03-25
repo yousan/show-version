@@ -1,0 +1,121 @@
+name: GitFlow Release Workflow
+
+on:
+  # リリースブランチが完了した時にmainとdevelopの両方にマージし、タグを作成
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version (e.g. 1.2.3)'
+        required: true
+        type: string
+      release_branch:
+        description: 'Release branch to finalize (e.g. release/v1.2.3)'
+        required: true
+        type: string
+
+jobs:
+  finalize-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 全履歴を取得
+      
+      - name: Setup Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      
+      - name: Checkout release branch
+        run: |
+          git checkout ${{ github.event.inputs.release_branch }} || (echo "Release branch not found" && exit 1)
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Update version in package.json
+        run: |
+          # package.jsonのバージョンを更新
+          npx json -I -f package.json -e "this.version='${{ github.event.inputs.release_version }}'"
+      
+      - name: Update version information in README
+        run: |
+          chmod +x bin/update_myself.sh
+          ./bin/update_myself.sh
+      
+      - name: Commit version update
+        run: |
+          git add package.json README.md
+          git commit -m "Release v${{ github.event.inputs.release_version }}"
+      
+      - name: Merge to main
+        run: |
+          git checkout main
+          git pull origin main
+          git merge --no-ff ${{ github.event.inputs.release_branch }} -m "Merge release branch '${{ github.event.inputs.release_branch }}' into main"
+      
+      - name: Create tag
+        run: |
+          git tag -a v${{ github.event.inputs.release_version }} -m "Release v${{ github.event.inputs.release_version }}"
+      
+      - name: Merge to develop
+        run: |
+          git checkout develop
+          git pull origin develop
+          git merge --no-ff ${{ github.event.inputs.release_branch }} -m "Merge release branch '${{ github.event.inputs.release_branch }}' into develop"
+      
+      - name: Push changes and tags
+        run: |
+          git push origin main
+          git push origin develop
+          git push origin --tags
+          git push origin --delete ${{ github.event.inputs.release_branch }}
+      
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          
+  create-release:
+    needs: finalize-release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main  # mainブランチを使用
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.event.inputs.release_version }}
+          release_name: Release v${{ github.event.inputs.release_version }}
+          draft: false
+          prerelease: false
+          body: |
+            # Release v${{ github.event.inputs.release_version }}
+            
+            ## Changes
+            
+            Please check the [CHANGELOG.md](https://github.com/yousan/show-version/blob/main/CHANGELOG.md) for the full list of changes.
+            
+            ## How to Install
+            
+            ```bash
+            npm install show-version@${{ github.event.inputs.release_version }}
+            ``` 
