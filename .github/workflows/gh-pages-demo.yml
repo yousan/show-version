@@ -1,57 +1,50 @@
-name: Deploy React Demo to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'examples/react-version-display/**'
-      - '.github/workflows/gh-pages-demo.yml'
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-          
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          
+
       - name: Install Dependencies
         run: |
           cd examples/react-version-display
           npm install
-          
+
       - name: Install show-version
         run: npm install -g @yousan/show-version
-          
+
       - name: Get version
         id: version
         run: |
           VERSION=$(show-version)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          
+
       - name: Set version
         run: echo "REACT_APP_VERSION=${{ env.VERSION }}" >> $GITHUB_ENV
-          
+
       - name: Build
         run: |
           cd examples/react-version-display
-          # 環境変数としてバージョンを設定
+          # Set version as environment variable
           REACT_APP_VERSION="${{ env.REACT_APP_VERSION }}" npm run build
-          # GitHub Pages用に.nojekyllファイルを作成
+          # Create .nojekyll file for GitHub Pages
           touch build/.nojekyll
-          
-      - name: Deploy to GitHub Pages 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          branch: gh-pages
-          folder: examples/react-version-display/build
-          clean: true 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./examples/react-version-display/build 
