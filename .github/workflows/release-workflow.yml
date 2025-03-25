@@ -90,7 +90,7 @@ jobs:
           fi
       
       # タグプッシュ時またはオプションで公開が選択された場合にのみnpmにパブリッシュする
-      - name: Publish to npm
+      - name: Setup Node.js for npm publish
         if: (github.event_name == 'push' && github.ref_type == 'tag') || github.event.inputs.publish_npm == 'true'
         uses: actions/setup-node@v4
         with:
@@ -109,11 +109,9 @@ jobs:
             exit 1
           fi
       
-      - name: Publish package
+      - name: Publish package to npm
         if: (github.event_name == 'push' && github.ref_type == 'tag') || github.event.inputs.publish_npm == 'true'
-        run: |
-          echo "npmにパッケージを公開します: @yousan/show-version@${{ steps.get-version.outputs.version }}"
-          npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
+        uses: JS-DevTools/npm-publish@v3
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          access: public 
