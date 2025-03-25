@@ -8,6 +8,10 @@ on:
       - '.github/workflows/gh-pages-demo.yml'
   workflow_dispatch:
 
+# GitHub Pages へのデプロイに必要な権限を追加
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
