@@ -265,6 +265,12 @@ function hasChanges(dir = '.') {
 // - 安定性向上
 // - 日時情報の追加: {datetime}フォーマットに対応
 
+// v1.4.0向けの改善：
+// - 日時フォーマットプレースホルダー {datetime} の追加
+// - 複数の日時フォーマットオプション（ISO, YYYYMMDDHHmmss, YYYYMMDD）
+// - コマンドラインオプション拡張（--datetime-format, --no-datetime）
+// - ドキュメントとサンプルの拡充
+
 module.exports = {
   getVersion,
   getVersionAsync,
