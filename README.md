@@ -12,6 +12,65 @@
 
 A simple utility to extract version identifiers (tags, branch names, commit hashes, etc.) from Git repositories. **No Git binary dependency** - operates with pure JavaScript implementation.
 
+## Quick Examples
+
+### React
+
+```jsx
+// ビルド設定 (webpack.config.js)
+const { getVersion } = require('@yousan/show-version');
+
+module.exports = {
+  plugins: [
+    new webpack.DefinePlugin({
+      'process.env.APP_VERSION': JSON.stringify(getVersion())
+    }),
+  ],
+};
+
+// Versionコンポーネント
+import React from 'react';
+
+const AppVersion = () => (
+  <div className="app-version">Version: {process.env.APP_VERSION}</div>
+);
+
+export default AppVersion;
+```
+
+### Vue
+
+```javascript
+// vite.config.js
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import { getVersion } from '@yousan/show-version';
+
+export default defineConfig({
+  plugins: [vue()],
+  define: {
+    'process.env.APP_VERSION': JSON.stringify(getVersion())
+  }
+});
+```
+
+```vue
+<!-- AppVersion.vue -->
+<template>
+  <div class="app-version">Version: {{ version }}</div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      version: process.env.APP_VERSION
+    }
+  }
+}
+</script>
+```
+
 ## Features
 
 - **No Git Binary Dependency**: Works even if Git is not installed on the system
