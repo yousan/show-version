@@ -1,17 +1,14 @@
 # show-version
+<!-- auto rewrite started here -->
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yousan/show-version/releases/tag/v1.0.0)
 
-<!-- 
-このバッジセクションは GitHub Actions によって自動的に更新されます。
-手動で変更しないでください。
--->
-[![Version](https://img.shields.io/badge/version-v1.1.1-blue.svg)](https://github.com/yousan/show-version/releases/tag/v1.0.0v0.0.3v0.0.3v0.0.3v0.0.3v0.0.3v1.1.1v1.1.1v1.1.1)
-[![Git](https://img.shields.io/badge/git-release%2Fv1.0.0%40fd6fc9a%20(dirty)-orange.svg)](https://github.com/yousan/show-version/commit/fd6fc9a)
+[![npm version](https://img.shields.io/npm/v/show-version.svg?v=1.0.0)](https://www.npmjs.com/package/show-version)
+[![GitHub package.json version](https://img.shields.io/github/package-json/v/yousan/show-version?v=1.0.0)](https://github.com/yousan/show-version)
+[![GitHub last commit](https://img.shields.io/github/last-commit/yousan/show-version?v=1.0.0)](https://github.com/yousan/show-version/commits)
+<!-- auto rewrite end here -->
 
-<!-- 常に最新の情報を表示する動的バッジ（キャッシュ回避のためにパッケージバージョンをクエリパラメータに追加） -->
-[![npm version](https://img.shields.io/npm/v/show-version.svg?v=1.0.0v0.0.3v0.0.3v0.0.3v0.0.3v0.0.3v1.1.1v1.1.1v1.1.1)](https://www.npmjs.com/package/show-version)
-[![GitHub package.json version](https://img.shields.io/github/package-json/v/yousan/show-version?v=1.0.0v0.0.3v0.0.3v0.0.3v0.0.3v0.0.3v1.1.1v1.1.1v1.1.1)](https://github.com/yousan/show-version)
-[![GitHub last commit](https://img.shields.io/github/last-commit/commits)
-[![GitHub license](https://img.shields.io/github/license/yousan/show-version?v=1.0.0v0.0.3v0.0.3v0.0.3v0.0.3v0.0.3v1.1.1v1.1.1v1.1.1)](https://github.com/yousan/show-version/blob/main/LICENSE)
+
+[![GitHub license](https://img.shields.io/github/license/yousan/show-version?v=1.0.0)](https://github.com/yousan/show-version/blob/main/LICENSE)
 
 A simple utility to extract version identifiers (tags, branch names, commit hashes, etc.) from Git repositories. **No Git binary dependency** - operates with pure JavaScript implementation.
 
