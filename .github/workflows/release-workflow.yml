@@ -16,12 +16,22 @@ on:
 jobs:
   update-badges:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout code
+      - name: Debug event info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Ref name: ${{ github.ref_name }}"
+          echo "Ref type: ${{ github.ref_type }}"
+      
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # タグ情報を取得するため全履歴を取得
-          ref: ${{ github.event.ref || 'main' }}
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -37,48 +47,36 @@ jobs:
           if [[ -n "${{ github.event.inputs.version }}" ]]; then
             # 手動実行時に指定されたバージョンを使用
             VERSION="${{ github.event.inputs.version }}"
-          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
             # タグからバージョンを取得
             VERSION="${{ github.ref_name }}"
             VERSION="${VERSION#v}"
+            echo "From tag: $VERSION"
           else
             # package.jsonからバージョンを取得
             VERSION=$(node -p "require('./package.json').version")
+            echo "From package.json: $VERSION"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "バージョン: $VERSION"
+          echo "使用するバージョン: $VERSION"
       
       - name: Update README badges
         run: |
           chmod +x bin/update_myself.sh
           ./bin/update_myself.sh
-          
-      - name: Check for changes
-        id: check-changes
-        run: |
-          if [[ -n "$(git status --porcelain README.md)" ]]; then
-            echo "changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "changes=false" >> $GITHUB_OUTPUT
-          fi
+          cat README.md | grep -A 5 "npm version"
       
-      - name: Get branch name
-        id: branch-name
-        run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            echo "branch=main" >> $GITHUB_OUTPUT
-          else
-            echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Commit changes
-        if: steps.check-changes.outputs.changes == 'true'
+      - name: Commit and push if changed
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          # 明示的にブランチを作成してチェックアウト
-          git checkout -b update-readme
-          git add README.md
-          git commit -m "docs: READMEのバージョン表示を ${{ steps.get-version.outputs.version }} に更新 [skip ci]"
-          # 明示的なターゲットブランチを指定してプッシュ
-          git push -f origin update-readme:${{ steps.branch-name.outputs.branch }} 
+          
+          if [[ -n "$(git status --porcelain README.md)" ]]; then
+            echo "README.mdに変更があります。コミットします。"
+            git add README.md
+            git commit -m "docs: READMEのバージョン表示を ${{ steps.get-version.outputs.version }} に更新 [skip ci]"
+            git push origin main
+            echo "プッシュ完了"
+          else
+            echo "README.mdに変更はありません。"
+          fi 
