@@ -19,7 +19,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # 全履歴を取得
       
@@ -33,9 +33,9 @@ jobs:
           git checkout ${{ github.event.inputs.release_branch }} || (echo "Release branch not found" && exit 1)
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '18'
           registry-url: 'https://registry.npmjs.org'
           
       - name: Install dependencies
@@ -93,18 +93,16 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: main  # mainブランチを使用
       
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.event.inputs.release_version }}
-          release_name: Release v${{ github.event.inputs.release_version }}
+          name: Release v${{ github.event.inputs.release_version }}
           draft: false
           prerelease: false
           body: |
