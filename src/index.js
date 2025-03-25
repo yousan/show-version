@@ -3,16 +3,16 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Gitリポジトリからバージョン情報を取得する（非同期）
- * @param {Object} options - オプション
- * @param {boolean} options.commitHash - コミットハッシュを含めるかどうか
- * @param {boolean} options.branchName - ブランチ名を含めるかどうか
- * @param {boolean} options.tag - タグ情報を含めるかどうか
- * @param {boolean} options.datetime - 日時情報を含めるかどうか
- * @param {string} options.datetimeFormat - 日時のフォーマット（'ISO'または'YYYYMMDDHHmmss'）
- * @param {string} options.format - 出力フォーマット
- * @param {string} options.dir - Gitリポジトリのディレクトリパス
- * @returns {Promise<string>} バージョン情報
+ * Get version information from Git repository (asynchronous)
+ * @param {Object} options - Options
+ * @param {boolean} options.commitHash - Whether to include commit hash
+ * @param {boolean} options.branchName - Whether to include branch name
+ * @param {boolean} options.tag - Whether to include tag information
+ * @param {boolean} options.datetime - Whether to include datetime information
+ * @param {string} options.datetimeFormat - Datetime format ('ISO' or 'YYYYMMDDHHmmss')
+ * @param {string} options.format - Output format
+ * @param {string} options.dir - Git repository directory path
+ * @returns {Promise<string>} Version information
  */
 async function getVersionAsync(options = {}) {
   const {
@@ -29,7 +29,7 @@ async function getVersionAsync(options = {}) {
   let currentBranch = 'unknown';
   
   try {
-    // ブランチ名を取得
+    // Get branch name
     if (branchName) {
       try {
         const branch = await git.currentBranch({
@@ -46,7 +46,7 @@ async function getVersionAsync(options = {}) {
       version = version.replace('{branch}', '');
     }
     
-    // コミットハッシュを取得
+    // Get commit hash
     if (commitHash) {
       try {
         const commitSha = await git.resolveRef({
@@ -54,7 +54,7 @@ async function getVersionAsync(options = {}) {
           dir,
           ref: 'HEAD'
         });
-        const hash = commitSha.slice(0, 7); // 短いハッシュ（7文字）
+        const hash = commitSha.slice(0, 7); // Short hash (7 characters)
         version = version.replace('{hash}', hash);
       } catch (e) {
         version = version.replace('{hash}', 'unknown');
@@ -63,27 +63,27 @@ async function getVersionAsync(options = {}) {
       version = version.replace('{hash}', '');
     }
     
-    // タグ情報を取得
+    // Get tag information
     if (tag) {
       let tagVersion = '0.0.0';
       
       try {
-        // リリースブランチからバージョン情報を取得
-        // 例: release/v1.2.3 → 1.2.3
+        // Get version information from release branch
+        // Example: release/v1.2.3 → 1.2.3
         if (currentBranch.startsWith('release/')) {
-          // リリースブランチからバージョン文字列を抽出
+          // Extract version string from release branch
           const releaseVersion = currentBranch.substring('release/'.length)
-                                            .replace(/^v/, ''); // 先頭の 'v' があれば削除
+                                            .replace(/^v/, ''); // Remove 'v' if it exists
           
           if (releaseVersion && /^\d+\.\d+\.\d+/.test(releaseVersion)) {
-            // セマンティックバージョンの形式であれば、そのバージョンを使用
+            // If it's in semantic version format, use that version
             tagVersion = releaseVersion;
           } else {
-            // 形式が異なる場合は通常のタグ取得処理
+            // If format is different, use regular tag retrieval process
             tagVersion = await getLatestTag();
           }
         } else {
-          // リリースブランチでない場合は通常のタグ取得処理
+          // If not a release branch, use regular tag retrieval process
           tagVersion = await getLatestTag();
         }
         
@@ -95,21 +95,21 @@ async function getVersionAsync(options = {}) {
       version = version.replace('{tag}', '');
     }
     
-    // 日時情報を追加
+    // Add datetime information
     if (datetime && version.includes('{datetime}')) {
       const now = new Date();
       let dateTimeStr;
       
-      // フォーマットに応じて日時文字列を生成
+      // Generate datetime string based on format
       if (datetimeFormat === 'ISO') {
-        // ISO形式: YYYY-MM-DDTHH:mm:ss
+        // ISO format: YYYY-MM-DDTHH:mm:ss
         dateTimeStr = now.toISOString().replace(/\.\d+Z$/, '');
       } else if (datetimeFormat === 'YYYYMMDDHHmmss') {
-        // 連続形式: YYYYMMDDHHmmss
+        // Continuous format: YYYYMMDDHHmmss
         const pad = (num) => String(num).padStart(2, '0');
         dateTimeStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
       } else {
-        // デフォルト形式: YYYYMMDD
+        // Default format: YYYYMMDD
         const pad = (num) => String(num).padStart(2, '0');
         dateTimeStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
       }
@@ -117,30 +117,30 @@ async function getVersionAsync(options = {}) {
       version = version.replace('{datetime}', dateTimeStr);
     }
     
-    // フォーマットを整理（余計なハイフン等を削除）
+    // Clean up format (remove extra hyphens etc.)
     version = version.replace(/-+/g, '-').replace(/^-|-$/g, '');
     
     return version;
   } catch (error) {
-    console.error('バージョン情報の取得に失敗しました:', error);
+    console.error('Failed to get version information:', error);
     return 'unknown';
   }
 }
 
 /**
- * 最新のタグを取得する内部関数
- * @param {string} dir - Gitリポジトリのディレクトリパス
- * @returns {Promise<string>} 最新のタグ（なければ'0.0.0'）
+ * Get latest tag
+ * @param {string} dir - Git repository directory path
+ * @returns {Promise<string>} Latest tag (if none, '0.0.0')
  */
 async function getLatestTag(dir = '.') {
   const tags = await git.listTags({ fs, dir });
   
-  // タグがあれば最新のものを取得（セマンティックバージョンでソート）
+  // If there are tags, get the latest one
   let latestTag = '0.0.0';
   if (tags.length > 0) {
-    // タグを取得できた場合、セマンティックバージョンとして並べ替え
+    // If tags are retrieved, sort them as semantic versions
     tags.sort((a, b) => {
-      // semverではないタグも扱えるように簡易的な比較を実装
+      // Implement simple comparison for tags that are not semver
       const aParts = a.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
       const bParts = b.split('.').map(p => parseInt(p.replace(/[^0-9]/g, '')) || 0);
       
@@ -161,18 +161,18 @@ async function getLatestTag(dir = '.') {
 }
 
 /**
- * Gitリポジトリからバージョン情報を取得する（同期版）
- * 内部では非同期処理を行いますが、同期的に結果を返すようラップします
- * @param {Object} options - オプション
- * @returns {string} バージョン情報
+ * Get version information from Git repository (synchronous)
+ * Internally performs asynchronous processing but wraps the result in a synchronous manner
+ * @param {Object} options - Options
+ * @returns {string} Version information
  */
 function getVersion(options = {}) {
-  // 警告: これは本番環境では推奨されない方法です
+  // Warning: This is not recommended for production environments
   try {
-    // 同期的にPromiseを実行するためのハック
+    // Hack to execute Promise synchronously
     const { execSync } = require('child_process');
     
-    // 一時スクリプトを実行して同期的に結果を取得
+    // Execute temporary script to get synchronous result
     const scriptContent = `
       const { getVersionAsync } = require('${__filename}');
       async function run() {
@@ -187,22 +187,22 @@ function getVersion(options = {}) {
       run();
     `;
     
-    // 一時スクリプトを同期的に実行して結果を取得
+    // Execute temporary script synchronously to get result
     const result = execSync(`node -e "${scriptContent.replace(/"/g, '\\"')}"`, {
       encoding: 'utf8'
     }).trim();
     
     return result;
   } catch (error) {
-    console.error('バージョン取得エラー:', error);
+    console.error('Version retrieval error:', error);
     return 'unknown';
   }
 }
 
 /**
- * 現在のGitリポジトリの状態から変更があるかどうかを確認する（非同期）
- * @param {string} dir - Gitリポジトリのディレクトリパス
- * @returns {Promise<boolean>} 変更があればtrue、なければfalse
+ * Check if there are changes in the current Git repository (asynchronous)
+ * @param {string} dir - Git repository directory path
+ * @returns {Promise<boolean>} true if there are changes, false if not
  */
 async function hasChangesAsync(dir = '.') {
   try {
@@ -211,25 +211,25 @@ async function hasChangesAsync(dir = '.') {
       dir
     });
     
-    // 変更があるかどうかチェック（ステージングされていないファイルを含む）
+    // Check if there are changes (including unstaged files)
     return statusMatrix.some(row => row[2] !== row[1]);
   } catch (error) {
-    console.error('リポジトリ状態の確認に失敗しました:', error);
+    console.error('Failed to check repository status:', error);
     return false;
   }
 }
 
 /**
- * 現在のGitリポジトリの状態から変更があるかどうかを確認する（同期版）
- * @param {string} dir - Gitリポジトリのディレクトリパス
- * @returns {boolean} 変更があればtrue、なければfalse
+ * Check if there are changes in the current Git repository (synchronous)
+ * @param {string} dir - Git repository directory path
+ * @returns {boolean} true if there are changes, false if not
  */
 function hasChanges(dir = '.') {
   try {
-    // 同期的にPromiseを実行するためのハック
+    // Hack to execute Promise synchronously
     const { execSync } = require('child_process');
     
-    // 一時スクリプトを実行して同期的に結果を取得
+    // Execute temporary script to get synchronous result
     const scriptContent = `
       const { hasChangesAsync } = require('${__filename}');
       async function run() {
@@ -244,32 +244,32 @@ function hasChanges(dir = '.') {
       run();
     `;
     
-    // 一時スクリプトを同期的に実行して結果を取得
+    // Execute temporary script synchronously to get result
     const resultStr = execSync(`node -e "${scriptContent.replace(/"/g, '\\"')}"`, {
       encoding: 'utf8'
     }).trim();
     
     return resultStr === 'true';
   } catch (error) {
-    console.error('変更確認エラー:', error);
+    console.error('Change check error:', error);
     return false;
   }
 }
 
-// v1.2.1向けのダミー更新：チケット#123対応
-// GitHub Actionsのnpm公開機能テスト
+// v1.2.1 for dummy update: Ticket #123 support
+// GitHub Actions npm publishing feature test
 
-// v1.3.0向けの改善：
-// - エラーメッセージの改善
-// - デバッグ情報の拡充
-// - 安定性向上
-// - 日時情報の追加: {datetime}フォーマットに対応
+// v1.3.0 for improvement:
+// - Improved error message
+// - Increased debug information
+// - Increased stability
+// - Added datetime information: {datetime} format support
 
-// v1.4.0向けの改善：
-// - 日時フォーマットプレースホルダー {datetime} の追加
-// - 複数の日時フォーマットオプション（ISO, YYYYMMDDHHmmss, YYYYMMDD）
-// - コマンドラインオプション拡張（--datetime-format, --no-datetime）
-// - ドキュメントとサンプルの拡充
+// v1.4.0 for improvement:
+// - Added datetime placeholder {datetime}
+// - Added multiple datetime format options (ISO, YYYYMMDDHHmmss, YYYYMMDD)
+// - Extended command line options (--datetime-format, --no-datetime)
+// - Expanded documentation and samples
 
 module.exports = {
   getVersion,
