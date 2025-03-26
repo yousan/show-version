@@ -1,0 +1,34 @@
+name: Configure GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/gh-pages-config.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  configure-pages:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        # パラメータなしでGitHub Pagesの設定を行う
+      
+      - name: Setup GitHub Pages
+        run: |
+          echo "Configuring GitHub Pages settings..."
+          
+      - name: Output Pages URL
+        run: |
+          echo "GitHub Pages URL: https://yousan.github.io/show-version/"
+          echo "GitHub Pages status check completed!" 

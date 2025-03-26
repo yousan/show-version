@@ -12,6 +12,13 @@
 
 A simple utility to extract version identifiers (tags, branch names, commit hashes, etc.) from Git repositories. **No Git binary dependency** - operates with pure JavaScript implementation.
 
+## Demo
+
+You can see a live demo of this library at:
+[show-version React Demo](https://yousan.github.io/show-version/)
+
+This demo shows how to integrate and use show-version in a React application to display version information.
+
 ## Quick Examples
 
 ### React
