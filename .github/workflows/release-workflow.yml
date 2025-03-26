@@ -18,12 +18,14 @@ on:
         type: boolean
         default: false
 
+# Add permissions at workflow level
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
     steps:
       - uses: actions/checkout@v3
         with:
@@ -70,8 +72,6 @@ jobs:
             git config --local user.name "github-actions[bot]"
             git add README.md
             git commit -m "docs: update version badges [skip ci]"
-            # Use token for push
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
             git push
           fi
 
