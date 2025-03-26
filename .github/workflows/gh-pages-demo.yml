@@ -6,45 +6,45 @@ on:
       - main
   workflow_dispatch:
 
+# Add permissions at workflow level
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
 
-      - name: Install Dependencies
-        run: |
-          cd examples/react-version-display
-          npm install
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Install show-version
-        run: npm install -g @yousan/show-version
+      - name: Build documentation
+        run: npm run docs:build
 
-      - name: Get version
-        id: version
-        run: |
-          VERSION=$(show-version)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
 
-      - name: Set version
-        run: echo "REACT_APP_VERSION=${{ env.VERSION }}" >> $GITHUB_ENV
-
-      - name: Build
-        run: |
-          cd examples/react-version-display
-          # Set version as environment variable
-          REACT_APP_VERSION="${{ env.REACT_APP_VERSION }}" npm run build
-          # Create .nojekyll file for GitHub Pages
-          touch build/.nojekyll
-
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./examples/react-version-display/build 
+          path: './docs'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2 
