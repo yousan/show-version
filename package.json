@@ -1,6 +1,6 @@
 {
   "name": "@yousan/show-version",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "A CLI tool to display version information from package.json",
   "main": "index.js",
   "bin": {
