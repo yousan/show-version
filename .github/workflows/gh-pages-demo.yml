@@ -1,4 +1,4 @@
-name: Deploy Documentation to GitHub Pages
+name: Deploy React App to GitHub Pages
 
 on:
   push:
@@ -32,10 +32,12 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        working-directory: examples/react-version-display
         run: npm ci
 
-      - name: Build documentation
-        run: npm run docs:build
+      - name: Build React app
+        working-directory: examples/react-version-display
+        run: npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
@@ -43,7 +45,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './docs'
+          path: './examples/react-version-display/build'
 
       - name: Deploy to GitHub Pages
         id: deployment
