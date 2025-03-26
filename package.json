@@ -19,7 +19,8 @@
   "author": "yousan",
   "license": "MIT",
   "dependencies": {
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "isomorphic-git": "^1.25.6"
   },
   "devDependencies": {
     "jsdoc": "^4.0.2",
