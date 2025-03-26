@@ -1,53 +1,28 @@
 {
   "name": "@yousan/show-version",
-  "version": "1.5.0",
-  "description": "Get version information from Git repositories without Git binary dependency",
-  "main": "src/index.js",
+  "version": "1.5.3",
+  "description": "A CLI tool to display version information from package.json",
+  "main": "index.js",
   "bin": {
-    "show-version": "bin/cli.js"
+    "show-version": "./bin/show-version.js"
   },
   "scripts": {
-    "test": "mocha test",
-    "example:basic": "node examples/basic-usage.js",
-    "example:cli": "bash examples/cli-examples.sh",
-    "example:ci": "node examples/ci-integration.js",
-    "docs:build": "mkdir -p docs && cp README.md docs/index.md"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:build": "jsdoc -c jsdoc.json",
+    "docs:serve": "serve docs"
   },
   "keywords": [
-    "git",
     "version",
     "cli",
-    "isomorphic",
-    "versioning",
-    "tag",
-    "commit",
-    "hash"
+    "package.json"
   ],
-  "author": "Yousan_O",
+  "author": "yousan",
   "license": "MIT",
   "dependencies": {
-    "isomorphic-git": "^1.25.3",
-    "yargs": "^17.7.2"
+    "commander": "^11.1.0"
   },
   "devDependencies": {
-    "chai": "^4.3.7",
-    "mocha": "^10.2.0"
-  },
-  "engines": {
-    "node": ">=12"
-  },
-  "files": [
-    "bin/",
-    "src/",
-    "README.md",
-    "LICENSE"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yousan/show-version.git"
-  },
-  "bugs": {
-    "url": "https://github.com/yousan/show-version/issues"
-  },
-  "homepage": "https://github.com/yousan/show-version#readme"
+    "jsdoc": "^4.0.2",
+    "serve": "^14.2.1"
+  }
 }
