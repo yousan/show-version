@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: examples/react-version-display
-        run: npm ci
+        run: npm install
 
       - name: Build React app
         working-directory: examples/react-version-display
