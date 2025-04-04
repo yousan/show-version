@@ -8,13 +8,9 @@ on:
   # Allow manual execution
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to update (if not specified, get from package.json)'
-        required: false
-        type: string
       publish:
-        description: 'Publish package to npm'
-        required: false
+        description: 'Publish to npm'
+        required: true
         type: boolean
         default: false
 
@@ -46,27 +42,25 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Use version from manual execution input
-      - name: Get version from input
-        if: github.event_name == 'workflow_dispatch' && inputs.version != ''
-        run: |
-          echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
-
       # Get version from tag
       - name: Get version from tag
         if: github.event_name == 'push'
         run: |
           echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      # Get version from package.json
-      - name: Get version from package.json
-        if: env.VERSION == ''
-        run: |
-          echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
-
       - name: Show version
         run: |
           echo "Version to use: $VERSION"
+
+      - name: Update package.json version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          npm version $VERSION --no-git-tag-version
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add package.json
+          git commit -m "chore: update package version to $VERSION [skip ci]"
+          git push origin HEAD:main
 
       - name: Update README badges
         run: |
