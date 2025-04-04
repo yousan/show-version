@@ -1,9 +1,17 @@
 #!/usr/bin/env node
 
 import { program } from 'commander';
-import { version } from '../index';
+import { getVersion } from '../index';
 
-program
-  .version(version)
-  .description('Display version information from package.json')
-  .parse(process.argv); 
+async function main() {
+  const version = await getVersion();
+  program
+    .version(version)
+    .description('Display version information from package.json')
+    .parse(process.argv);
+}
+
+main().catch(error => {
+  console.error('Error:', error);
+  process.exit(1);
+}); 

@@ -12,7 +12,7 @@
     "docs:serve": "serve docs",
     "build": "tsc",
     "watch": "tsc -w",
-    "prepare": "npm run build && cp package.json dist/ && cp -r node_modules dist/"
+    "prepare": "npm run build"
   },
   "keywords": [
     "version",
@@ -26,6 +26,7 @@
     "isomorphic-git": "^1.25.6"
   },
   "devDependencies": {
+    "@types/commander": "^2.12.5",
     "@types/node": "^20.17.30",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
