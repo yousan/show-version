@@ -1,10 +1,10 @@
 # show-version
 <!-- auto rewrite started here -->
-[![Version](https://img.shields.io/badge/version-1.5.13-blue.svg)](https://github.com/yousan/show-version/releases/tag/v1.5.13)
+[![Version](https://img.shields.io/badge/version-1.5.14-blue.svg)](https://github.com/yousan/show-version/releases/tag/v1.5.14)
 
-[![npm version](https://img.shields.io/npm/v/show-version.svg?v=1.5.13)](https://www.npmjs.com/package/show-version)
-[![GitHub package.json version](https://img.shields.io/github/package-json/v/yousan/show-version?v=1.5.13)](https://github.com/yousan/show-version)
-[![GitHub last commit](https://img.shields.io/github/last-commit/yousan/show-version?v=1.5.13)](https://github.com/yousan/show-version/commits)
+[![npm version](https://img.shields.io/npm/v/show-version.svg?v=1.5.14)](https://www.npmjs.com/package/show-version)
+[![GitHub package.json version](https://img.shields.io/github/package-json/v/yousan/show-version?v=1.5.14)](https://github.com/yousan/show-version)
+[![GitHub last commit](https://img.shields.io/github/last-commit/yousan/show-version?v=1.5.14)](https://github.com/yousan/show-version/commits)
 <!-- auto rewrite end here -->
 
 
