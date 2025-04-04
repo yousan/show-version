@@ -77,7 +77,7 @@ jobs:
             git config --local user.name "github-actions[bot]"
             git add README.md
             git commit -m "docs: update version badges [skip ci]"
-            git push
+            git push origin HEAD:main
           fi
 
       - name: Publish to npm
