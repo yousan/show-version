@@ -2,14 +2,17 @@
   "name": "@yousan/show-version",
   "version": "1.5.5",
   "description": "A CLI tool to display version information from package.json",
-  "main": "index.js",
+  "main": "dist/index.js",
   "bin": {
-    "show-version": "./bin/show-version.js"
+    "show-version": "./dist/bin/show-version.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "docs:build": "jsdoc -c jsdoc.json",
-    "docs:serve": "serve docs"
+    "docs:serve": "serve docs",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prepare": "npm run build"
   },
   "keywords": [
     "version",
@@ -23,7 +26,10 @@
     "isomorphic-git": "^1.25.6"
   },
   "devDependencies": {
+    "@types/isomorphic-git": "^1.25.0",
+    "@types/node": "^20.11.24",
     "jsdoc": "^4.0.2",
-    "serve": "^14.2.1"
+    "serve": "^14.2.1",
+    "typescript": "^5.3.3"
   }
 }
