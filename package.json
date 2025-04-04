@@ -26,8 +26,9 @@
     "isomorphic-git": "^1.25.6"
   },
   "devDependencies": {
-    "@types/isomorphic-git": "^1.25.0",
     "@types/node": "^20.11.24",
+    "@types/react": "^18.2.61",
+    "@types/react-dom": "^18.2.19",
     "jsdoc": "^4.0.2",
     "serve": "^14.2.1",
     "typescript": "^5.3.3"
