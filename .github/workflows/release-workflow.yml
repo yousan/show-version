@@ -81,7 +81,7 @@ jobs:
           fi
 
       - name: Publish to npm
-        if: inputs.publish
+        if: github.event_name == 'push' || inputs.publish
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
