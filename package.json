@@ -12,6 +12,7 @@
     "docs:serve": "serve docs",
     "build": "tsc",
     "watch": "tsc -w",
+    "preinstall": "npm install",
     "prepare": "npm run build"
   },
   "keywords": [
